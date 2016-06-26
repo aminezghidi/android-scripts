@@ -127,23 +127,12 @@ switch ( command ) {
     case "now":
         Calendar calendar = Calendar.getInstance()
 
-        String monthOfYear = String.valueOf((calendar.get(Calendar.MONTH) + 1))
-        if (monthOfYear.length() == 1)
-            monthOfYear = "0" + monthOfYear
-        
-        String dayOfMonth = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH))
-        if (dayOfMonth.length() == 1)
-            dayOfMonth = "0" + dayOfMonth;
+        String monthOfYear = fixFormat(String.valueOf((calendar.get(Calendar.MONTH) + 1)))
+        String dayOfMonth = fixFormat(String.valueOf(calendar.get(Calendar.DAY_OF_MONTH)))
+        String minutesOfHour = fixFormat(String.valueOf(calendar.get(Calendar.MINUTE)))
+        String secondsOfMinutes = fixFormat(String.valueOf(calendar.get(Calendar.SECOND)))
 
-        String minutesOfHour = String.valueOf(calendar.get(Calendar.MINUTE))
-        if (minutesOfHour.length() == 1)
-            minutesOfHour = "0" + minutesOfHour;
-
-        String secondsOfMinutes = String.valueOf(calendar.get(Calendar.SECOND))
-        if (secondsOfMinutes.length() == 1)
-            secondsOfMinutes = "0" + secondsOfMinutes;
-
-        adbcmd = "shell date -s "+ 
+        adbcmd = "shell date -s " + 
                     calendar.get(Calendar.YEAR) + 
                     monthOfYear + 
                     dayOfMonth + 
@@ -153,6 +142,8 @@ switch ( command ) {
                     secondsOfMinutes
 
         println(DateGroovyMethods.format(calendar.getTime(), "dd/MMM/yyyy hh:mm:ss"))
+        
+        println(adbcmd)
         executeADBCommand(adbcmd)
 
         break
@@ -161,7 +152,9 @@ switch ( command ) {
         Date tomorrow = DateGroovyMethods.next(calendar.getTime())
         calendar.setTime(tomorrow)
 
-        adbcmd = "shell date -s "+ calendar.get(Calendar.YEAR) + (calendar.get(Calendar.MONTH) + 1) + calendar.get(Calendar.DAY_OF_MONTH)
+        String monthOfYear = fixFormat(String.valueOf((calendar.get(Calendar.MONTH) + 1)))
+
+        adbcmd = "shell date -s " + calendar.get(Calendar.YEAR) + monthOfYear + calendar.get(Calendar.DAY_OF_MONTH)
 
         if (option != null && isTimeOptionCorrect) {
             adbcmd += "." + hour + minutes + seconds
@@ -170,7 +163,8 @@ switch ( command ) {
         } else {
             println(DateGroovyMethods.format(tomorrow, "dd/MMM/yyyy hh:mm:ss"))
         }
-        
+        println(adbcmd)
+        executeADBCommand(adbcmd)
 
         break
     default:
@@ -183,7 +177,11 @@ kickSystemService()
 System.exit(0)
 
 
-
+String fixFormat(String val) {
+    if (val.length() == 1)
+        return "0" + val;
+    return val;
+}
 
 
 
