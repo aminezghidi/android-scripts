@@ -143,7 +143,7 @@ switch ( command ) {
         if (secondsOfMinutes.length() == 1)
             secondsOfMinutes = "0" + secondsOfMinutes;
 
-        adbcmd = "date -s "+ 
+        adbcmd = "shell date -s "+ 
                     calendar.get(Calendar.YEAR) + 
                     monthOfYear + 
                     dayOfMonth + 
@@ -161,7 +161,7 @@ switch ( command ) {
         Date tomorrow = DateGroovyMethods.next(calendar.getTime())
         calendar.setTime(tomorrow)
 
-        adbcmd = "date -s "+ calendar.get(Calendar.YEAR) + (calendar.get(Calendar.MONTH) + 1) + calendar.get(Calendar.DAY_OF_MONTH)
+        adbcmd = "shell date -s "+ calendar.get(Calendar.YEAR) + (calendar.get(Calendar.MONTH) + 1) + calendar.get(Calendar.DAY_OF_MONTH)
 
         if (option != null && isTimeOptionCorrect) {
             adbcmd += "." + hour + minutes + seconds
