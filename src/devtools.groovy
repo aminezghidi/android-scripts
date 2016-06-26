@@ -4,6 +4,7 @@
  * Improve command line parsing
  */
 
+import org.codehaus.groovy.runtime.DateGroovyMethods
 
 gfx_command_map = ['on' : 'visual_bars', 'off' : 'false', 'lines' : 'visual_lines']
 layout_command_map = ['on' : 'true', 'off' : 'false']
@@ -26,14 +27,52 @@ cli.with {
 def opts = cli.parse(args)
 if(!opts)
     printHelp("not provided correct option")
-if(opts.arguments().size() != 2)
-    printHelp("you need to provide two arguments: command and option")
+if(opts.arguments().size() < 1 || opts.arguments().size() > 2)
+    printHelp("you need to provide one or two arguments: command or command and option")
 if(opts.v)
     verbose = true
 
 //get args
 String command = opts.arguments().get(0)
-String option = opts.arguments().get(1)
+String option
+
+boolean isTimeOptionCorrect = true
+String hour
+String minutes
+String seconds
+
+if (opts.arguments().size() == 2) {
+    option = opts.arguments().get(1)
+
+    if (command.equals("tomorrow")) {
+        String[] time = option.split(":")
+        hour = time[0]
+        minutes = time[1]
+        seconds = time[2]
+
+        if (Integer.parseInt(hour) > 23 || Integer.parseInt(hour) < 0)
+            isTimeOptionCorrect = false
+
+        if (Integer.parseInt(minutes) > 59 || Integer.parseInt(minutes) < 0)
+            isTimeOptionCorrect = false
+
+        if (Integer.parseInt(seconds) > 59 || Integer.parseInt(seconds) < 0)
+            isTimeOptionCorrect = false
+
+        // Time format correction
+        if (isTimeOptionCorrect) {
+            if(hour.length() == 1)
+                hour = "0" + hour
+            if(minutes.length() == 1)
+                minutes = "0" + minutes
+            if(seconds.length() == 1)
+                seconds = "0" + seconds
+        } else {
+            println("Time option is not correct, it will not be taken into consideration.")
+        }
+
+    }
+}
 
 //get adb exec
 adbExec = getAdbPath();
@@ -85,12 +124,59 @@ switch ( command ) {
         adbcmd = "shell service call SurfaceFlinger 1002 android.ui.ISurfaceComposer"+show_updates_map[option]
         executeADBCommand(adbcmd)
         break
+    case "now":
+        Calendar calendar = Calendar.getInstance()
+
+        String monthOfYear = String.valueOf((calendar.get(Calendar.MONTH) + 1))
+        if (monthOfYear.length() == 1)
+            monthOfYear = "0" + monthOfYear
+        
+        String dayOfMonth = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH))
+        if (dayOfMonth.length() == 1)
+            dayOfMonth = "0" + dayOfMonth;
+
+        String minutesOfHour = String.valueOf(calendar.get(Calendar.MINUTE))
+        if (minutesOfHour.length() == 1)
+            minutesOfHour = "0" + minutesOfHour;
+
+        String secondsOfMinutes = String.valueOf(calendar.get(Calendar.SECOND))
+        if (secondsOfMinutes.length() == 1)
+            secondsOfMinutes = "0" + secondsOfMinutes;
+
+        adbcmd = "date -s "+ 
+                    calendar.get(Calendar.YEAR) + 
+                    monthOfYear + 
+                    dayOfMonth + 
+                    "." +
+                    calendar.get(Calendar.HOUR_OF_DAY) + 
+                    minutesOfHour +
+                    secondsOfMinutes
+
+        println(DateGroovyMethods.format(calendar.getTime(), "dd/MMM/yyyy hh:mm:ss"))
+        executeADBCommand(adbcmd)
+
+        break
+    case "tomorrow":
+        Calendar calendar = Calendar.getInstance()
+        Date tomorrow = DateGroovyMethods.next(calendar.getTime())
+        calendar.setTime(tomorrow)
+
+        adbcmd = "date -s "+ calendar.get(Calendar.YEAR) + (calendar.get(Calendar.MONTH) + 1) + calendar.get(Calendar.DAY_OF_MONTH)
+
+        if (option != null && isTimeOptionCorrect) {
+            adbcmd += "." + hour + minutes + seconds
+            println(DateGroovyMethods.format(tomorrow, "dd/MMM/yyyy" + " " + hour + ":" + minutes + ":" + seconds))
+
+        } else {
+            println(DateGroovyMethods.format(tomorrow, "dd/MMM/yyyy hh:mm:ss"))
+        }
+        
+
+        break
     default:
         printHelp("could not find the command $command you provided")
 
 }
-
-
 
 kickSystemService()
 
